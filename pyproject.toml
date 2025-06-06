@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "goit-pythonweb-hw-08"
+version = "0.1.0"
+description = "REST API for managing contacts"
+authors = ["Dmytro Zhuk <dm.zhuk@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9 || ^3.13"
+fastapi = "^0.115.12"
+uvicorn = "^0.30.6"
+sqlalchemy = "^2.0.41"
+psycopg2-binary = "^2.9.9"
+pydantic = "^2.11.5"
+python-dateutil = "^2.9.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
