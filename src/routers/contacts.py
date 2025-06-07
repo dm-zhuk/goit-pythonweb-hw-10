@@ -2,16 +2,16 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from database.connect import get_db
-from datetime import date
 from typing import Optional, List
-from schemas.contact import (
+from datetime import date
+from src.database.connect import get_db
+from src.schemas.contact import (
     ContactCreate,
     ContactResponse,
     ContactUpdate,
     BirthdayResponse,
 )
-from repository.contacts import (
+from src.repository.contacts import (
     create_contact,
     get_contacts,
     get_contact,

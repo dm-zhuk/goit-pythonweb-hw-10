@@ -2,7 +2,7 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from settings.base import DB_USER, DB_PASSWORD, DB_DOMAIN, DB_NAME, DB_PORT
+from src.settings.base import DB_USER, DB_PASSWORD, DB_DOMAIN, DB_NAME, DB_PORT
 from .models import Base
 
 # Database connection details

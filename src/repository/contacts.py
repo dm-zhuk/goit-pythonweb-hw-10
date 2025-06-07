@@ -4,8 +4,8 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, DataError
 from sqlalchemy import extract, func
-from database.models import Contact
-from schemas.contact import ContactCreate, ContactUpdate
+from src.database.models import Contact
+from src.schemas.contact import ContactCreate, ContactUpdate
 from datetime import date, timedelta
 
 
@@ -17,9 +17,6 @@ def create_contact(db: Session, contact: ContactCreate):
     return db_contact
 
 
-# offset(n) використовується для пропуску вказаної кількості рядків n перед поверненням результатів запиту
-# skip — скільки записів потрібно пропустити з початку
-# limit — кількість записів, що виводяться
 def get_contacts(db: Session, skip: int = 0, limit: int = 10):
     return db.query(Contact).offset(skip).limit(limit).all()
 
@@ -51,8 +48,6 @@ def delete_contact(db: Session, contact_id: int):
     return db_contact
 
 
-# оператори для порівняння колонок зі значеннями або іншими колонками,такі як ==, !=, <, >, <=, >=, in_, like, ilike ..
-# ilike => "case-Insensitive LIKE"
 def search_contacts(db: Session, query: str):
     return (
         db.query(Contact)
@@ -72,7 +67,6 @@ def get_upcoming_birthdays(db: Session, days: int = 7, start_date: date = None):
     start = start_date or date.today()
     end = start + timedelta(days=days)
 
-    # Query contacts with birthdays in the next 7 days (month and day)
     contacts = (
         db.query(
             Contact.id,
@@ -97,7 +91,6 @@ def get_upcoming_birthdays(db: Session, days: int = 7, start_date: date = None):
         .all()
     )
 
-    # Format response as list of dictionaries
     return [
         {
             "message": f"{contact.first_name} {contact.last_name}'s birthday is on {contact.birthday_formatted} (ID: {contact.id})"

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "goit-pythonweb-hw-08"
+name = "goit-pythonweb-hw-10"
 version = "0.1.0"
 description = "REST API for managing contacts"
 authors = ["Dmytro Zhuk <dm.zhuk@gmail.com>"]

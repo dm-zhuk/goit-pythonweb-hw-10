@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers.contacts import router
+from src.routers.contacts import router
 
 app = FastAPI(title="Contacts API", description="Contacts management REST API")
 app.include_router(router)
