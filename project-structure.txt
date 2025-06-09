@@ -1,0 +1,36 @@
+.
+├── Dockerfile
+├── docker-compose.yaml
+├── poetry.lock
+├── project-structure.txt
+├── pyproject.toml
+├── src
+│   ├── __init__.py
+│   ├── authentication
+│   │   ├── auth.py
+│   │   └── schemas.py
+│   ├── database
+│   │   ├── __init__.py
+│   │   ├── connect.py
+│   │   └── models.py
+│   ├── main.py
+│   ├── migrations/
+│   ├── models
+│   │   ├── database_models.py
+│   │   └── pydantic_models.py
+│   ├── my_file.py
+│   ├── pytest.ini
+│   ├── repository
+│   │   ├── __init__.py
+│   │   └── contacts.py
+│   ├── routers
+│   │   ├── __init__.py
+│   │   ├── contacts.py
+│   │   └── users.py
+│   ├── schemas
+│   │   ├── __init__.py
+│   │   └── contact.py
+│   ├── settings
+│   │   ├── __init__.py
+│   │   └── base.py
+│   └── tests/

@@ -1,25 +1,22 @@
-"""Database Setup: sqlalchemy to define DB structure and connect to postgresql"""
-
+# src/database/connect.py
+from fastapi import HTTPException, status
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.settings.base import DB_USER, DB_PASSWORD, DB_DOMAIN, DB_NAME, DB_PORT
-from .models import Base
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import SQLAlchemyError
+from src.settings.base import DATABASE_URL
 
-# Database connection details
-DB_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_DOMAIN}:{DB_PORT}/{DB_NAME}"
-
-# Create SQLAlchemy engine
-engine = create_engine(url=DB_URL)
+engine = create_engine(DATABASE_URL, echo=True)
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Create all tables defined in models.py
-Base.metadata.create_all(bind=engine)
+Base = declarative_base()
 
 
-# Dependency to get DB session
 def get_db():
     db = Session()
     try:
         yield db
+    except SQLAlchemyError as err:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
     finally:
         db.close()
