@@ -1,22 +1,25 @@
-# src/database/connect.py
-from fastapi import HTTPException, status
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.exc import SQLAlchemyError
-from src.settings.base import DATABASE_URL
 
-engine = create_engine(DATABASE_URL, echo=True)
-Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+from src.settings.base import settings
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+engine = create_async_engine(settings.DATABASE_URL, echo=True)
+async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 Base = declarative_base()
 
 
-def get_db():
-    db = Session()
-    try:
-        yield db
-    except SQLAlchemyError as err:
-        db.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
-    finally:
-        db.close()
+async def get_db():
+    async with async_session() as db:
+        try:
+            yield db
+        except Exception as err:
+            await db.rollback()
+            logger.error(f"Database error: {str(err)}")
+            raise
+        finally:
+            await db.close()

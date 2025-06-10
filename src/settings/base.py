@@ -1,16 +1,23 @@
-from dotenv import load_dotenv
-import os
+from pydantic_settings import BaseSettings
 
-load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-JWT_SECRET = os.getenv("JWT_SECRET")
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
-JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES"))
-CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME")
-CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY")
-CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET")
-SMTP_HOST = os.getenv("SMTP_HOST")
-SMTP_PORT = int(os.getenv("SMTP_PORT"))
-SMTP_USER = os.getenv("SMTP_USER")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+class Settings(BaseSettings):
+    DATABASE_URL: str
+    JWT_SECRET: str
+    JWT_ALGORITHM: str
+    JWT_EXPIRE_MINUTES: int
+    CLOUDINARY_CLOUD_NAME: str
+    CLOUDINARY_API_KEY: str
+    CLOUDINARY_API_SECRET: str
+    SMTP_HOST: str
+    SMTP_PORT: int
+    SMTP_USER: str
+    SMTP_PASSWORD: str
+    REDIS_URL: str = "redis://redis:6379/0"
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
+settings = Settings()

@@ -1,72 +1,51 @@
-# src/main.py
-from fastapi import FastAPI, Depends, HTTPException, status
-from sqlalchemy import text
-from sqlalchemy.orm import Session
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi_limiter import FastAPILimiter
+from redis.asyncio import Redis
 
-from src.database.connect import get_db
-from src.routers.contacts import router
-
+from src.settings.base import settings
+from src.routers import contacts, users
+from src.api import utils
 
 app = FastAPI(title="Contacts API", description="Contacts management REST API")
-app.include_router(router)
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5050"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
-@app.get("/", name="Root Endpoint")
-def read_root():
-    return {"message": "Welcome to the Contacts API v2.0"}
+# Rate limiting
+@app.on_event("startup")
+async def startup():
+    redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
+    await FastAPILimiter.init(redis)
 
 
-@app.get("/api/test-db")
-def test_db_connection(db: Session = Depends(get_db)):
-    try:
-        result = db.execute(text("SELECT 1")).fetchone()
-        if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Database not reachable",
-            )
-        return {"message": "Database is reachable!"}
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
-
-
-@app.get("/api/healthchecker")
-def healthchecker(db: Session = Depends(get_db)):
-    try:
-        result = db.execute(text("SELECT 1")).fetchone()
-        print(result)
-        if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Database is not configured correctly",
-            )
-        return {"message": "Welcome to FastAPI!"}
-    except Exception as e:
-        print(e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error connecting to the database",
-        )
-
+app.include_router(utils.router, prefix="/api")
+app.include_router(contacts.router, prefix="/api")
+app.include_router(users.router, prefix="/api")
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("src.main:app", host="127.0.0.1", port=8000, reload=True)
 
 # source .venv/bin/activate
 # fastapi dev src/main.py
 # http://localhost:5050/login?next=/
-# http://0.0.0.0:8000/docs
+# http://127.0.0.1:8000/docs
 
 
-# curl -X POST http://localhost:8000/contacts/ -H "Content-Type: application/json" -d '{"first_name":"Kim","last_name":"Philby","email":"kimf@mail.co.uk","phone_number":"012223456789","birthday":"1985-05-06,"additional_data": "test-02"}'
+# curl -X POST http://127.0.0.1:8000/contacts/ -H "Content-Type: application/json" -d '{"first_name":"Kim","last_name":"Philby","email":"kimf@mail.co.uk","phone_number":"012223456789","birthday":"1985-05-06,"additional_data": "test-02"}'
 
-# curl -X PUT http://localhost:8000/contacts/3 -H "Content-Type: application/json" -d '{"first_name":"Kim","last_name":"Philby","email":"kimf@mail.co.uk","phone_number":"01222","birthday":"1985-05-06","additional_data":"test-211(PUT)"}'
+# curl -X PUT http://127.0.0.1:8000/contacts/3 -H "Content-Type: application/json" -d '{"first_name":"Kim","last_name":"Philby","email":"kimf@mail.co.uk","phone_number":"01222","birthday":"1985-05-06","additional_data":"test-211(PUT)"}'
 
-# python x_pycache.py
+# python del_pycache.py
 
 
 # docker run --name db -e POSTGRES_USER=devops -e POSTGRES_PASSWORD=admin -e POSTGRES_DB=contacts_db -p 5432:5432 -d postgres:latest

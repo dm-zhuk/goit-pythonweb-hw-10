@@ -1,11 +1,8 @@
-"""Defines the API endpoints (like /contacts) using FastAPI"""
-
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
-from datetime import date
 from src.database.connect import get_db
-from src.schemas.contact import (
+from src.schemas.schemas import (
     ContactCreate,
     ContactResponse,
     ContactUpdate,
@@ -20,53 +17,89 @@ from src.repository.contacts import (
     search_contacts,
     get_upcoming_birthdays,
 )
+from src.services.auth import auth_service
+from src.database.models import User
+from datetime import date
 
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 
 
 @router.post("/", response_model=ContactResponse, status_code=status.HTTP_201_CREATED)
-def create_new_contact(contact: ContactCreate, db: Session = Depends(get_db)):
-    return create_contact(db, contact)
+async def create_new_contact(
+    contact: ContactCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(auth_service.get_current_user),
+):
+    return await create_contact(db, contact, current_user)
 
 
-@router.get("/", response_model=list[ContactResponse])
-def read_contacts(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    return get_contacts(db, skip, limit)
+@router.get("/", response_model=List[ContactResponse])
+async def read_contacts(
+    skip: int = 0,
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(auth_service.get_current_user),
+):
+    return await get_contacts(db, current_user, skip, limit)
 
 
 @router.get("/{contact_id}", response_model=ContactResponse)
-def read_contact(contact_id: int, db: Session = Depends(get_db)):
-    contact = get_contact(db, contact_id)
+async def read_contact(
+    contact_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(auth_service.get_current_user),
+):
+    contact = await get_contact(db, contact_id, current_user)
     if not contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
+        )
     return contact
 
 
 @router.put("/{contact_id}", response_model=ContactResponse)
-def update_existing_contact(
-    contact_id: int, contact: ContactUpdate, db: Session = Depends(get_db)
+async def update_existing_contact(
+    contact_id: int,
+    contact: ContactUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(auth_service.get_current_user),
 ):
-    updated_contact = update_contact(db, contact_id, contact)
+    updated_contact = await update_contact(db, contact_id, contact, current_user)
     if not updated_contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
+        )
     return updated_contact
 
 
 @router.delete("/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_existing_contact(contact_id: int, db: Session = Depends(get_db)):
-    contact = delete_contact(db, contact_id)
+async def delete_existing_contact(
+    contact_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(auth_service.get_current_user),
+):
+    contact = await delete_contact(db, contact_id, current_user)
     if not contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
+        )
     return None
 
 
-@router.get("/search/", response_model=list[ContactResponse])
-def search_contacts_by_query(query: str, db: Session = Depends(get_db)):
-    return search_contacts(db, query)
+@router.get("/search/", response_model=List[ContactResponse])
+async def search_contacts_by_query(
+    query: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(auth_service.get_current_user),
+):
+    return await search_contacts(db, query, current_user)
 
 
 @router.get("/birthdays/", response_model=List[BirthdayResponse])
-def get_contacts_with_upcoming_birthdays(
-    days: int = 7, start_date: Optional[date] = None, db: Session = Depends(get_db)
+async def get_contacts_with_upcoming_birthdays(
+    days: int = 7,
+    start_date: Optional[date] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(auth_service.get_current_user),
 ):
-    return get_upcoming_birthdays(db, days=days, start_date=start_date)
+    return await get_upcoming_birthdays(db, current_user, days, start_date)

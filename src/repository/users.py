@@ -1,27 +1,36 @@
-from sqlalchemy.orm import Session
-
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException, status
 from src.database.models import User
-from src.models.pydantic_models import UserCreate
+from src.schemas.schemas import UserCreate
+from src.services.auth import auth_service
 
 
-async def get_user_by_email(email: str, db: Session) -> User | None:
-    return db.query(User).filter_by(email=email).first()
+async def get_user_by_email(email: str, db: AsyncSession) -> User | None:
+    result = await db.execute(User.__table__.select().where(User.email == email))
+    return result.scalars().first()
 
 
-async def create_user(body: UserCreate, db: Session):
-    new_user = User(**body.model_dump)
+async def create_user(body: UserCreate, db: AsyncSession) -> User:
+    existing_user = await get_user_by_email(body.email, db)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
+        )
+    hashed_password = auth_service.get_password_hash(body.password)
+    new_user = User(email=body.email, hashed_password=hashed_password)
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    await db.commit()
+    await db.refresh(new_user)
     return new_user
 
 
-async def update_token(user: User, refresh_token, db: Session):
+async def update_token(user: User, refresh_token: str | None, db: AsyncSession):
     user.refresh_token = refresh_token
-    db.commit()
+    await db.commit()
 
 
-async def change_confirmed_email(email: str, db: Session) -> None:
+async def confirm_email(email: str, db: AsyncSession):
     user = await get_user_by_email(email, db)
-    user.confirmed = True
-    db.commit()
+    if user:
+        user.is_verified = True
+        await db.commit()
