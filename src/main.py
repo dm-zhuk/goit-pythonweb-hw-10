@@ -42,6 +42,8 @@ app.include_router(users.router, prefix="/api")
 # docker-compose exec web ls -l /app/src/services/templates
 
 # poetry run uvicorn src.main:app --reload --log-level debug
+
+
 # curl -X POST http://localhost:8000/users/request_email \-H "Content-Type: application/json" \-d '{"email": "user@example.com"}'
 
 # curl -X POST http://0.0.0.0:8000/contacts/ -H "Content-Type: application/json" -d '{"first_name":"Kim","last_name":"Philby","email":"kimf@mail.co.uk","phone_number":"012223456789","birthday":"1985-05-06,"additional_data": "test-02"}'
