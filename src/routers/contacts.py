@@ -17,9 +17,9 @@ from src.repository.contacts import (
     search_contacts,
     get_upcoming_birthdays,
 )
-from src.services.auth import auth_service
 from src.database.models import User
 from datetime import date
+from src.settings.auth import auth_service
 
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 

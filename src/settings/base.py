@@ -9,11 +9,13 @@ class Settings(BaseSettings):
     CLOUDINARY_CLOUD_NAME: str
     CLOUDINARY_API_KEY: str
     CLOUDINARY_API_SECRET: str
-    SMTP_HOST: str
+    SMTP_SERVER: str
     SMTP_PORT: int
     SMTP_USER: str
     SMTP_PASSWORD: str
-    REDIS_URL: str = "redis://redis:6379/0"
+    MAIL_FROM_EMAIL: str
+    BASE_URL: str
+    REDIS_URL: str
 
     class Config:
         env_file = ".env"

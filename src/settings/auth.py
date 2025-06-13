@@ -2,7 +2,6 @@
 
 import redis.asyncio as redis
 import pickle
-
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
@@ -11,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
 
 from src.settings.base import settings
-from src.repository.users import get_user_by_email
 from src.database.connect import get_db
 import logging
 
@@ -79,6 +77,10 @@ class Auth:
             return pickle.loads(cached_user)
 
         # Fetch from DB
+        from src.repository.users import (
+            get_user_by_email,
+        )
+
         user = await get_user_by_email(email, db)
         if user is None:
             raise credentials_exception

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "goit-pythonweb-hw-10"
+name = "pythonweb-hw10"
 version = "0.2.0"
 description = "REST API for managing contacts"
 authors = ["Dmytro Zhuk <dm.zhuk@gmail.com>"]
@@ -10,8 +10,9 @@ python = "^3.10"
 fastapi = "^0.115.0"
 uvicorn = "^0.30.6"
 sqlalchemy = "^2.0.0"
-psycopg2-binary = "^2.9.9"
 pydantic = { version = "^2.0.0", extras = ["email"] }
+pydantic-settings = "^2.9.1"
+python-multipart = "^0.0.20"
 python-dateutil = "^2.9.0"
 python-jose = { extras = ["cryptography"], version = "^3.3.0" }
 passlib = { extras = ["bcrypt"], version = "^1.7.4" }

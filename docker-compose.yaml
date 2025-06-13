@@ -1,4 +1,4 @@
-version: "3.8"
+# version: "3.8"
 
 services:
   redis:
@@ -16,11 +16,6 @@ services:
       POSTGRES_DB: contacts_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U devops -d contacts_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     ports:
       - "5432:5432"
 
@@ -34,10 +29,7 @@ services:
     ports:
       - "5050:80"
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
+      - db
 
   web:
     build: .
@@ -46,10 +38,8 @@ services:
     env_file:
       - .env
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
+      - db
+      - redis
 
 volumes:
   postgres_data:
