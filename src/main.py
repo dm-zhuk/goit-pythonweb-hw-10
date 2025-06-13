@@ -1,22 +1,24 @@
-import os
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_limiter import FastAPILimiter
 from redis.asyncio import Redis
-from dotenv import load_dotenv
 
 from src.settings.base import settings
 from src.routers import contacts, users
 from src.routers import utils
 
-load_dotenv()
 app = FastAPI(title="Contacts API", description="Contacts management REST API")
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hello, World!"}
+
 
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("BASE_URL")],
+    allow_origins=[settings.BASE_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,13 +32,13 @@ async def startup():
     await FastAPILimiter.init(redis)
 
 
+# Routers
 app.include_router(utils.router, prefix="/api")
 app.include_router(contacts.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 
 
 # docker-compose down
-# export COMPOSE_BAKE=true
 # docker-compose build --no-cache
 # docker-compose up -d
 # docker-compose exec web ls -l /app/src/services/templates
