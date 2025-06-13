@@ -7,11 +7,6 @@ from src.database.connect import get_db
 router = APIRouter(tags=["healthchecker"])
 
 
-@router.get("/", name="Root Endpoint")
-def read_root():
-    return {"message": "Welcome to the Contacts API v2.0"}
-
-
 @router.get("/healthchecker")
 async def healthchecker(db: AsyncSession = Depends(get_db)):
     try:
@@ -23,7 +18,9 @@ async def healthchecker(db: AsyncSession = Depends(get_db)):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Database is not reachable",
             )
-        return {"message": "Database configured correctly. Welcome to FastAPI!"}
+        return {
+            "message": "Database configured correctly. Welcome to the Contacts FAST API v2.0!"
+        }
     except Exception as e:
         print(e)
         raise HTTPException(

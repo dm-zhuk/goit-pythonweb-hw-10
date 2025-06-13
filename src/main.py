@@ -3,17 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_limiter import FastAPILimiter
 from redis.asyncio import Redis
 
+from src.database.connect import init_db
 from src.settings.base import settings
 from src.routers import contacts, users
 from src.routers import utils
 
 app = FastAPI(title="Contacts API", description="Contacts management REST API")
-
-
-@app.get("/")
-async def root():
-    return {"message": "Hello, World!"}
-
 
 # CORS
 app.add_middleware(
@@ -30,6 +25,7 @@ app.add_middleware(
 async def startup():
     redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
     await FastAPILimiter.init(redis)
+    await init_db()
 
 
 # Routers
@@ -37,6 +33,10 @@ app.include_router(utils.router, prefix="/api")
 app.include_router(contacts.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
 # docker-compose down
 # docker-compose build --no-cache

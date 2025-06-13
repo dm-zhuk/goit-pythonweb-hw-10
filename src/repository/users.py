@@ -1,11 +1,14 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from fastapi import HTTPException, status
 from src.database.models import User
 from src.schemas.schemas import UserCreate
+from typing import Optional
 
 
-async def get_user_by_email(email: str, db: AsyncSession) -> User | None:
-    result = await db.execute(User.__table__.select().where(User.email == email))
+async def get_user_by_email(email: str, db: AsyncSession) -> Optional[User]:
+    stmt = select(User).where(User.email == email)
+    result = await db.execute(stmt)
     return result.scalars().first()
 
 
@@ -26,6 +29,9 @@ async def create_user(body: UserCreate, db: AsyncSession, auth_service) -> User:
 
 async def confirm_email(email: str, db: AsyncSession):
     user = await get_user_by_email(email, db)
-    if user:
-        user.is_verified = True
-        await db.commit()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    user.is_verified = True
+    await db.commit()
