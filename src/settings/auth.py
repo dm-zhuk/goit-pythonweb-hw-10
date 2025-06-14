@@ -1,14 +1,11 @@
-"""Authentication services with password hashing"""
-
 import redis.asyncio as redis
-import pickle
+import json
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
-
 from src.settings.base import settings
 from src.database.connect import get_db
 import logging
@@ -21,7 +18,7 @@ class Auth:
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/login")
 
     def __init__(self):
-        self.redis = redis.from_url(settings.REDIS_URL, decode_responses=True)
+        self.redis = redis.from_url(settings.REDIS_URL)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         return self.pwd_context.verify(plain_password, hashed_password)
@@ -74,19 +71,17 @@ class Auth:
         # Check Redis cache
         cached_user = await self.redis.get(f"user:{email}")
         if cached_user:
-            return pickle.loads(cached_user)
+            return json.loads(cached_user)
 
         # Fetch from DB
-        from src.repository.users import (
-            get_user_by_email,
-        )
+        from src.repository.users import get_user_by_email
 
         user = await get_user_by_email(email, db)
         if user is None:
             raise credentials_exception
 
         # Cache user
-        await self.redis.set(f"user:{email}", pickle.dumps(user), ex=900)
+        await self.redis.set(f"user:{email}", json.dumps(user.dict()), ex=900)
         return user
 
     async def get_email_from_token(self, token: str):

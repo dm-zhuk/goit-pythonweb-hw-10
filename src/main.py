@@ -5,12 +5,11 @@ from redis.asyncio import Redis
 
 from src.database.connect import init_db
 from src.settings.base import settings
-from src.routers import contacts, users
-from src.routers import utils
+from src.routers import contacts, users, utils
 
 app = FastAPI(title="Contacts API", description="Contacts management REST API")
 
-# CORS
+# CORS Configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.BASE_URL],
@@ -20,15 +19,15 @@ app.add_middleware(
 )
 
 
-# Rate limiting
+# Rate Limiting and Redis Initialization
 @app.on_event("startup")
 async def startup():
-    redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
+    redis = Redis.from_url(settings.REDIS_URL)
     await FastAPILimiter.init(redis)
     await init_db()
 
 
-# Routers
+# Include Routers
 app.include_router(utils.router, prefix="/api")
 app.include_router(contacts.router, prefix="/api")
 app.include_router(users.router, prefix="/api")

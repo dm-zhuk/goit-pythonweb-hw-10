@@ -1,11 +1,20 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status
+from typing import Optional
+import redis.asyncio as redis
+from redis_lru import RedisLRU
+
+from src.settings.base import settings
 from src.database.models import User
 from src.schemas.schemas import UserCreate
-from typing import Optional
+
+# Initialize Redis client
+redis_client = redis.from_url(settings.REDIS_URL)
+cache = RedisLRU(redis_client)
 
 
+@cache
 async def get_user_by_email(email: str, db: AsyncSession) -> Optional[User]:
     stmt = select(User).where(User.email == email)
     result = await db.execute(stmt)
