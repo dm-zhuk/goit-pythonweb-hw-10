@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
+from datetime import date
+
 from src.database.connect import get_db
 from src.schemas.schemas import (
     ContactCreate,
@@ -18,8 +20,8 @@ from src.repository.contacts import (
     get_upcoming_birthdays,
 )
 from src.database.models import User
-from datetime import date
 from src.services.auth import auth_service
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -69,7 +71,7 @@ async def read_contact(
             )
         return contact
     except HTTPException as e:
-        raise e  # Re-raise known HTTP exceptions
+        raise e
     except Exception as e:
         logger.error(f"Error retrieving contact: {str(e)}")
         raise HTTPException(

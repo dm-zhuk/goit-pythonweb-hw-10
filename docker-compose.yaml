@@ -1,14 +1,6 @@
 version: "3.8"
 
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: redis_server
-    ports:
-      - "6379:6379"
-    networks:
-      - app-network
-
   db:
     image: postgres:14-alpine
     container_name: postgres_server
@@ -37,6 +29,14 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
   web:
     build: .
     container_name: web-1
@@ -49,11 +49,10 @@ services:
       - ./.env:/app/.env
     environment:
       - PYTHONPATH=/app/src
-      - REDIS_URL=redis://redis:6379/0
       - TZ=Europe/Kyiv
     depends_on:
-      - redis
       - db
+      - redis
     command:
       [
         "uvicorn",

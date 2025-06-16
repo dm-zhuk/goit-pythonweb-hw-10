@@ -1,5 +1,6 @@
 import cloudinary
 import cloudinary.uploader
+from fastapi import UploadFile
 
 
 class UploadFileService:
@@ -14,7 +15,7 @@ class UploadFileService:
             secure=True,
         )
 
-    def upload_file(self, file, username: str) -> str:
+    def upload_file(self, file: UploadFile, username: str) -> str:
         public_id = f"RestApp/{username}"
         try:
             r = cloudinary.uploader.upload(

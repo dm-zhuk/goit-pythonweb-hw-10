@@ -1,16 +1,15 @@
-import json
 import logging
-import redis.asyncio as redis
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from libgravatar import Gravatar
 from sqlalchemy import select
 from fastapi import HTTPException, status, Depends
-from typing import Optional
-from src.services.auth import auth_service
+from typing import Optional, Union
+from libgravatar import Gravatar
+
+from src.database.connect import get_db
 from src.database.models import User
 from src.schemas.schemas import UserCreate, UserResponse
-from src.database.connect import get_db
-from src.services.redis import get_r_client
+from src.services.auth import auth_service
 
 
 logger = logging.getLogger(__name__)
@@ -19,9 +18,8 @@ logger = logging.getLogger(__name__)
 async def create_user(
     body: UserCreate,
     db: AsyncSession = Depends(get_db),
-    r: redis.Redis = Depends(get_r_client),
 ) -> User:
-    existing_user = await get_user_by_email(body.email, db, r)
+    existing_user = await get_user_by_email(body.email, db)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
@@ -44,34 +42,27 @@ async def create_user(
     await db.commit()
     await db.refresh(new_user)
 
-    user_dict = UserResponse.model_validate(new_user).dict()
-    await r.set(f"user:{new_user.email}", json.dumps(user_dict), ex=900)
-
     return new_user
 
 
 async def get_user_by_email(
     email: str,
     db: AsyncSession = Depends(get_db),
-    r: redis.Redis = Depends(get_r_client),
-) -> Optional[UserResponse]:
-    cached_user = await r.get(f"user:{email}")
-    if cached_user:
-        return UserResponse.model_validate(json.loads(cached_user))
-
+    response: bool = False,
+) -> Optional[Union[UserResponse, User]]:
     stmt = select(User).where(User.email == email)
     result = await db.execute(stmt)
     user = result.scalars().first()
 
     if user:
-        user_response = UserResponse(
-            id=user.id,
-            email=user.email,
-            is_verified=user.is_verified,
-            avatar_url=user.avatar_url,
-        )
-        await r.set(f"user:{email}", json.dumps(user_response.dict()), ex=900)
-        return user_response
+        if response:
+            return UserResponse(
+                id=user.id,
+                email=user.email,
+                is_verified=user.is_verified,
+                avatar_url=user.avatar_url,
+            )
+        return user
 
     return None
 
@@ -79,9 +70,8 @@ async def get_user_by_email(
 async def confirm_email(
     email: str,
     db: AsyncSession = Depends(get_db),
-    r: redis.Redis = Depends(get_r_client),
 ):
-    user = await get_user_by_email(email, db, r)
+    user = await get_user_by_email(email, db)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
@@ -104,10 +94,3 @@ async def confirm_email(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to verify email: {str(e)}",
         )
-    finally:
-        if r:
-            try:
-                user_dict = UserResponse.model_validate(user).dict()
-                await r.set(f"user:{email}", json.dumps(user_dict), ex=900)
-            except Exception as e:
-                logger.warning(f"Failed to cache verified user {email}: {str(e)}")

@@ -1,10 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_limiter import FastAPILimiter
-from src.database.connect import init_db
+
+from src.database.connect import init_db, client
+from src.utils import compute_value
 from src.services.base import settings
 from src.routers import contacts, users, utils
-from src.services.redis import get_r_client
+
+import uvicorn
 
 app = FastAPI(title="Contacts API", description="Contacts management REST API")
 
@@ -18,29 +21,21 @@ app.add_middleware(
 )
 
 
-# Rate limiting and Redis init/close
 @app.on_event("startup")
 async def startup():
-    await FastAPILimiter.init(get_r_client())
     await init_db()
+    await FastAPILimiter.init(client)
 
 
-@app.on_event("shutdown")
-async def shutdown():
-    await get_r_client().close()
+@app.get("/compute/{value}")
+async def get_computed_value(value: int):
+    result = compute_value(value)
+    return {"result": result}
 
 
 app.include_router(utils.router, prefix="/api")
 app.include_router(contacts.router, prefix="/api/contacts")
 app.include_router(users.router)
 
-# source .venv/bin/activate
-# clear cache —force
-# docker-compose down
-# docker-compose up --build -d
-
-# docker-compose exec web ls -l /app/src/services/templates
-
-# python del_pycache.py
-
-# openssl rand -hex 32 (create JWT_SECRET)
+if __name__ == "__main__":
+    uvicorn.run("src.main:app", debug=True, reload=True)

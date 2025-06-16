@@ -39,8 +39,9 @@ class BirthdayResponse(BaseModel):
 
 # User Schemas
 class UserCreate(BaseModel):
-    email: EmailStr
+    email: str
     password: str
+    avatar: Optional[str] = None
 
 
 class UserResponse(BaseModel):

@@ -1,11 +1,10 @@
-"""Define functions for CRUD operations (to interact with DB) and search/birthday logic"""
-
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, extract, func
+from datetime import date, timedelta
+
 from src.database.models import Contact, User
 from src.schemas.schemas import ContactCreate, ContactUpdate
-from datetime import date, timedelta
 
 
 async def create_contact(db: AsyncSession, contact: ContactCreate, user: User):

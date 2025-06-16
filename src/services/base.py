@@ -15,7 +15,6 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str
     MAIL_FROM_EMAIL: str
     BASE_URL: str
-    REDIS_URL: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
