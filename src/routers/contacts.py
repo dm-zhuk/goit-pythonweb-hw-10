@@ -19,8 +19,10 @@ from src.repository.contacts import (
 )
 from src.database.models import User
 from datetime import date
-from src.settings.auth import auth_service
+from src.services.auth import auth_service
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 
 
@@ -30,7 +32,12 @@ async def create_new_contact(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(auth_service.get_current_user),
 ):
-    return await create_contact(db, contact, current_user)
+    try:
+        return await create_contact(db, contact, current_user)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.get("/", response_model=List[ContactResponse])
@@ -40,7 +47,12 @@ async def read_contacts(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(auth_service.get_current_user),
 ):
-    return await get_contacts(db, current_user, skip, limit)
+    try:
+        return await get_contacts(db, current_user, skip, limit)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.get("/{contact_id}", response_model=ContactResponse)
@@ -49,12 +61,37 @@ async def read_contact(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(auth_service.get_current_user),
 ):
-    contact = await get_contact(db, contact_id, current_user)
-    if not contact:
+    try:
+        contact = await get_contact(db, contact_id, current_user)
+        if not contact:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
+            )
+        return contact
+    except HTTPException as e:
+        raise e  # Re-raise known HTTP exceptions
+    except Exception as e:
+        logger.error(f"Error retrieving contact: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
         )
-    return contact
+
+
+@router.get("/search/", response_model=List[ContactResponse])
+async def search_contacts_by_query(
+    query: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(auth_service.get_current_user),
+):
+    try:
+        return await search_contacts(db, query, current_user)
+    except Exception as e:
+        logger.error(f"Error searching contacts: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error",
+        )
 
 
 @router.put("/{contact_id}", response_model=ContactResponse)
@@ -86,15 +123,6 @@ async def delete_existing_contact(
     return None
 
 
-@router.get("/search/", response_model=List[ContactResponse])
-async def search_contacts_by_query(
-    query: str,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(auth_service.get_current_user),
-):
-    return await search_contacts(db, query, current_user)
-
-
 @router.get("/birthdays/", response_model=List[BirthdayResponse])
 async def get_contacts_with_upcoming_birthdays(
     days: int = 7,
@@ -102,4 +130,9 @@ async def get_contacts_with_upcoming_birthdays(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(auth_service.get_current_user),
 ):
-    return await get_upcoming_birthdays(db, current_user, days, start_date)
+    try:
+        return await get_upcoming_birthdays(db, current_user, days, start_date)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )

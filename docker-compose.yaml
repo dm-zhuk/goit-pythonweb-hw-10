@@ -2,13 +2,16 @@ version: "3.8"
 
 services:
   redis:
-    image: redis:7
+    image: redis:7-alpine
+    container_name: redis_server
     ports:
       - "6379:6379"
+    networks:
+      - app-network
+
   db:
-    image: postgres:14
+    image: postgres:14-alpine
     container_name: postgres_server
-    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -17,6 +20,10 @@ services:
       - ./postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    restart: always
+    networks:
+      - app-network
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin_ui
@@ -27,6 +34,8 @@ services:
       - "5050:80"
     depends_on:
       - db
+    networks:
+      - app-network
 
   web:
     build: .
@@ -35,10 +44,33 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    volumes:
+      - ./src:/app/src # temp. for development
+      - ./.env:/app/.env
     environment:
       - PYTHONPATH=/app/src
+      - REDIS_URL=redis://redis:6379/0
+      - TZ=Europe/Kyiv
     depends_on:
+      - redis
       - db
+    command:
+      [
+        "uvicorn",
+        "src.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload",
+      ]
+    restart: always
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

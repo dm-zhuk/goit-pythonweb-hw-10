@@ -2,7 +2,7 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from fastapi_mail.errors import ConnectionErrors
 from pathlib import Path
 
-from src.settings.base import settings
+from src.services.base import settings
 
 import logging
 

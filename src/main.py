@@ -1,11 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_limiter import FastAPILimiter
-from redis.asyncio import Redis
-
 from src.database.connect import init_db
-from src.settings.base import settings
+from src.services.base import settings
 from src.routers import contacts, users, utils
+from src.services.redis import get_r_client
 
 app = FastAPI(title="Contacts API", description="Contacts management REST API")
 
@@ -19,35 +18,28 @@ app.add_middleware(
 )
 
 
-# Rate Limiting and Redis Initialization
+# Rate limiting and Redis init/close
 @app.on_event("startup")
 async def startup():
-    redis = Redis.from_url(settings.REDIS_URL)
-    await FastAPILimiter.init(redis)
+    await FastAPILimiter.init(get_r_client())
     await init_db()
 
 
-# Include Routers
+@app.on_event("shutdown")
+async def shutdown():
+    await get_r_client().close()
+
+
 app.include_router(utils.router, prefix="/api")
-app.include_router(contacts.router, prefix="/api")
-app.include_router(users.router, prefix="/api")
+app.include_router(contacts.router, prefix="/api/contacts")
+app.include_router(users.router)
 
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
+# source .venv/bin/activate
+# clear cache —force
 # docker-compose down
-# docker-compose build --no-cache
-# docker-compose up -d
+# docker-compose up --build -d
+
 # docker-compose exec web ls -l /app/src/services/templates
-
-# poetry run uvicorn src.main:app --reload --log-level debug
-
-
-# curl -X POST http://localhost:8000/users/request_email \-H "Content-Type: application/json" \-d '{"email": "user@example.com"}'
-
-# curl -X POST http://0.0.0.0:8000/contacts/ -H "Content-Type: application/json" -d '{"first_name":"Kim","last_name":"Philby","email":"kimf@mail.co.uk","phone_number":"012223456789","birthday":"1985-05-06,"additional_data": "test-02"}'
 
 # python del_pycache.py
 

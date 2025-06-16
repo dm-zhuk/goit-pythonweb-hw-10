@@ -17,13 +17,13 @@ pydantic-settings = "^2.9.1"
 python-multipart = "^0.0.20"
 python-dateutil = "^2.9.0"
 python-jose = { extras = ["cryptography"], version = "^3.3.0" }
-passlib = { extras = ["bcrypt"], version = "^1.7.4" }
+passlib = "^1.7.4"
 python-dotenv = "^1.0.1"
 aiosmtplib = "^3.0.1"
 cloudinary = "^1.41.0"
 redis = "^5.0.0"
 asyncpg = "^0.30.0"
-redis-lru = "^0.1.2"
+libgravatar = "^1.0.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.0"
